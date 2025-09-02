@@ -1,29 +1,3 @@
-# bot.py
-# requirements:
-#   pip install "discord.py==2.4.0" "python-dotenv==1.0.1"
-#
-# .env example:
-#   DISCORD_TOKEN=MTQxMTY2NDE4OTUxNjQxOTExMg.GIohom.w39R1zKDfpBiEo0EqjtP7zNuBZAM-8xs2O4ZnY
-#   GUILD_ID=1269385621277773905
-#   LFT_CHANNEL_ID=1411664537777864766
-#   LFP_CHANNEL_ID=1411664537777864766
-#   MOD_QUEUE_CHANNEL_ID=1273234957355057183
-#   COOLDOWN_MINUTES=10
-#   POST_EXPIRY_DAYS=7
-
-# bot.py
-# requirements:
-#   pip install "discord.py==2.4.0" "python-dotenv==1.0.1"
-#
-# .env example:
-#   DISCORD_TOKEN=your-bot-token
-#   GUILD_ID=1269385621277773905
-#   LFT_CHANNEL_ID=123456789012345678
-#   LFP_CHANNEL_ID=234567890123456789
-#   MOD_QUEUE_CHANNEL_ID=0
-#   COOLDOWN_MINUTES=10
-#   POST_EXPIRY_DAYS=7
-
 import asyncio
 import os
 import re
