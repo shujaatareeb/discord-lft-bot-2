@@ -164,7 +164,7 @@ class LFTModal(Modal, title="LFT Form"):
             placeholder="Username#TAG (e.g., PlayerOne#EUW)"
         )
         self.rank = TextInput(
-            label="Current/Peak Rank",
+            label="Current & Peak Rank",
             placeholder="Current / Peak (e.g., Ascendant 2 / Immortal 1)"
         )
         self.roles = TextInput(
