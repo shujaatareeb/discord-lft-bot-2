@@ -92,7 +92,7 @@ def build_title_and_fields(kind: str, data: dict):
         title = clean("LFT {}".format(data["Riot ID (with #)"]))
         fields = {
             "Riot ID (with #)": data["Riot ID (with #)"],
-            "Current/Peak Rank": data["Current/Peak Rank"],
+            "Current & Peak Rank": data["Current/Peak Rank"],
             "Roles": data["Roles"],
             "Recent Teams": data["Recent Teams"],
             "Details": data["Details"],
