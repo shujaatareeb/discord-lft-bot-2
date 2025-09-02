@@ -149,22 +149,39 @@ async def post_embed(kind: str, author_id: int, data: dict) -> discord.Message:
 
 # ---------- presence ----------
 async def update_presence():
-    # Bots can’t set a true plain-text custom status; "Watching" is closest.
     activity = discord.Activity(
         type=discord.ActivityType.watching,
-        name="players and teams connect!"
+        name="Helping players and teams connect!"
     )
     await bot.change_presence(status=discord.Status.online, activity=activity)
 
-# ---------- LFT modal (5 inputs, with Riot ID) ----------
+# ---------- LFT modal (5 inputs, with Riot ID + placeholders) ----------
 class LFTModal(Modal, title="LFT Form"):
     def __init__(self):
         super(LFTModal, self).__init__(title="LFT Form")
-        self.riot = TextInput(label="Riot ID (with #)")
-        self.rank = TextInput(label="Current/Peak Rank")
-        self.roles = TextInput(label="Roles")
-        self.recent = TextInput(label="Recent Teams", required=False)
-        self.details = TextInput(label="Details", style=discord.TextStyle.paragraph, required=False)
+        self.riot = TextInput(
+            label="Riot ID (with #)",
+            placeholder="Username#TAG (e.g., PlayerOne#EUW)"
+        )
+        self.rank = TextInput(
+            label="Current/Peak Rank",
+            placeholder="Current / Peak (e.g., Ascendant 2 / Immortal 1)"
+        )
+        self.roles = TextInput(
+            label="Roles",
+            placeholder="e.g., Duelist, Initiator, Controller, Sentinel"
+        )
+        self.recent = TextInput(
+            label="Recent Teams",
+            placeholder="Team names/events (optional)",
+            required=False
+        )
+        self.details = TextInput(
+            label="Details",
+            placeholder="Availability, languages, scrim times, goals (optional)",
+            style=discord.TextStyle.paragraph,
+            required=False
+        )
         for item in (self.riot, self.rank, self.roles, self.recent, self.details):
             self.add_item(item)
 
@@ -215,15 +232,32 @@ class LFTModal(Modal, title="LFT Form"):
             else:
                 await interaction.followup.send("Error: {}".format(e), ephemeral=True)
 
-# ---------- LFP modal (5 inputs) ----------
+# ---------- LFP modal (5 inputs + placeholders) ----------
 class LFPModal(Modal, title="LFP Form"):
     def __init__(self):
         super(LFPModal, self).__init__(title="LFP Form")
-        self.team = TextInput(label="Team Name")
-        self.roles_needed = TextInput(label="Roles Needed")
-        self.peak = TextInput(label="Peak Rank")
-        self.current = TextInput(label="Current Rank")
-        self.benefits = TextInput(label="Benefits or details", style=discord.TextStyle.paragraph, required=False)
+        self.team = TextInput(
+            label="Team Name",
+            placeholder="Your team/org name"
+        )
+        self.roles_needed = TextInput(
+            label="Roles Needed",
+            placeholder="e.g., Controller, IGL, Initiator"
+        )
+        self.peak = TextInput(
+            label="Peak Rank",
+            placeholder="e.g., Immortal 2"
+        )
+        self.current = TextInput(
+            label="Current Rank",
+            placeholder="e.g., Ascendant 3+"
+        )
+        self.benefits = TextInput(
+            label="Benefits or details",
+            placeholder="Schedule, staff, compensation, region, expectations (optional)",
+            style=discord.TextStyle.paragraph,
+            required=False
+        )
         for item in (self.team, self.roles_needed, self.peak, self.current, self.benefits):
             self.add_item(item)
 
@@ -274,11 +308,16 @@ class LFPModal(Modal, title="LFP Form"):
             else:
                 await interaction.followup.send("Error: {}".format(e), ephemeral=True)
 
-# ---------- Rejection Reason Modal ----------
+# ---------- Rejection Reason Modal (with placeholder) ----------
 class RejectReasonModal(Modal, title="Rejection Reason"):
     def __init__(self, *, author_id: int, kind: str, payload: dict, queue_channel_id: int, queue_message_id: int):
         super(RejectReasonModal, self).__init__(title="Rejection Reason")
-        self.reason = TextInput(label="Reason for rejection", style=discord.TextStyle.paragraph, required=False)
+        self.reason = TextInput(
+            label="Reason for rejection",
+            placeholder="e.g., missing info, wrong channel, not enough details",
+            style=discord.TextStyle.paragraph,
+            required=False
+        )
         self.add_item(self.reason)
         self.author_id = author_id
         self.kind = kind
@@ -287,7 +326,6 @@ class RejectReasonModal(Modal, title="Rejection Reason"):
         self.queue_message_id = queue_message_id
 
     async def on_submit(self, interaction: discord.Interaction):
-        # Clear cooldown and notify
         clear_cooldown(self.author_id)
         # DM user
         try:
@@ -295,9 +333,9 @@ class RejectReasonModal(Modal, title="Rejection Reason"):
             r = self.reason.value or "No reason provided."
             await user.send("Your {} submission was rejected.\nReason: {}".format(self.kind.upper(), r))
         except Exception:
-            pass  # user's DMs might be closed
+            pass
 
-        # Ping in queue channel with reason & disable buttons
+        # Ping in queue channel and disable buttons
         try:
             ch = bot.get_channel(self.queue_channel_id)
             if ch:
@@ -312,7 +350,6 @@ class RejectReasonModal(Modal, title="Rejection Reason"):
         except Exception:
             pass
 
-        # Acknowledge moderator
         try:
             await interaction.response.send_message("Rejected and user notified (cooldown cleared).", ephemeral=True)
         except Exception:
@@ -336,7 +373,7 @@ class ApprovalView(View):
         try:
             await maybe_delete_previous(self.author_id)
             msg = await post_embed(self.kind, self.author_id, self.payload)
-            mark_post(self.author_id, msg.id)  # cooldown starts only on approve
+            mark_post(self.author_id, msg.id)
 
             # DM user with approval and link
             try:
@@ -345,7 +382,7 @@ class ApprovalView(View):
             except Exception:
                 pass
 
-            # Ping user in the queue channel & disable buttons
+            # Ping user in queue channel & disable buttons
             try:
                 ch = bot.get_channel(self.queue_channel_id)
                 if ch:
@@ -372,7 +409,6 @@ class ApprovalView(View):
         if not interaction.user.guild_permissions.manage_messages:
             await interaction.response.send_message("Moderator permission needed.", ephemeral=True)
             return
-        # Open a modal to collect the reason
         try:
             await interaction.response.send_modal(
                 RejectReasonModal(
@@ -456,7 +492,7 @@ async def on_message(message: discord.Message):
     if message.author.bot:
         return
     if isinstance(message.channel, discord.DMChannel):
-        await message.channel.send("What are you looking to post?", view=ChoiceView())
+        await message.channel.send("Choose an option to start:", view=ChoiceView())
 
 # ---------- expire old posts ----------
 async def expire_loop():
@@ -500,7 +536,7 @@ async def on_ready():
             print("Synced {} commands (global)".format(len(synced)))
         print("discord.py version:", discord.__version__)
         print("Logged in as {} (id: {})".format(bot.user, bot.user.id))
-        await update_presence()  # "Watching players and teams connect!"
+        await update_presence()
     except Exception as e:
         print("Command sync/presence failed:", e)
     bot.loop.create_task(expire_loop())
