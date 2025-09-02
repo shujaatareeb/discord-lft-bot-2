@@ -151,7 +151,8 @@ async def post_embed(kind: str, author_id: int, data: dict) -> discord.Message:
 async def update_presence():
     # Bots can’t set a true plain-text custom status; "Watching" is closest.
     activity = discord.Activity(
-        discordPresence.state = "Helping players and teams connect!";
+        type=discord.ActivityType.watching,
+        name="players and teams connect!"
     )
     await bot.change_presence(status=discord.Status.online, activity=activity)
 
