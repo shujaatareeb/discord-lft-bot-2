@@ -92,7 +92,7 @@ def build_title_and_fields(kind: str, data: dict):
         title = clean("LFT {}".format(data["Riot ID (with #)"]))
         fields = {
             "Riot ID (with #)": data["Riot ID (with #)"],
-            "Current & Peak Rank": data["Current/Peak Rank"],
+            "Current/Peak Rank": data["Current/Peak Rank"],
             "Roles": data["Roles"],
             "Recent Teams": data["Recent Teams"],
             "Details": data["Details"],
@@ -164,7 +164,7 @@ class LFTModal(Modal, title="LFT Form"):
             placeholder="Username#TAG (e.g., PlayerOne#EUW)"
         )
         self.rank = TextInput(
-            label="Current & Peak Rank",
+            label="Current/Peak Rank",
             placeholder="Current / Peak (e.g., Ascendant 2 / Immortal 1)"
         )
         self.roles = TextInput(
@@ -486,13 +486,19 @@ async def setup_cmd(
     POST_EXPIRY_DAYS = expire_days
     await interaction.response.send_message("Setup updated.", ephemeral=True)
 
-# ---------- message handler: always offer buttons on DM ----------
+# ---------- message handler: DM welcome text + buttons ----------
+WELCOME_DM = (
+    "🎮 Ready to level up your journey?\n"
+    "Tap **LFT** if you're a player hunting for a team.\n"
+    "Tap **LFP** if you're a team looking for talent."
+)
+
 @bot.event
 async def on_message(message: discord.Message):
     if message.author.bot:
         return
     if isinstance(message.channel, discord.DMChannel):
-        await message.channel.send("Choose an option to start:", view=ChoiceView())
+        await message.channel.send(WELCOME_DM, view=ChoiceView())
 
 # ---------- expire old posts ----------
 async def expire_loop():
