@@ -9,3 +9,7 @@ __pycache__/
 # OS stuff
 .DS_Store
 Thumbs.db
+
+# Google OAuth files
+client_secret.json
+token.json

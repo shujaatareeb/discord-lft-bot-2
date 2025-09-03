@@ -1,3 +1,16 @@
+# bot.py
+# requirements:
+#   pip install "discord.py==2.4.0" "python-dotenv==1.0.1"
+#
+# .env example:
+#   DISCORD_TOKEN=your-bot-token
+#   GUILD_ID=1269385621277773905
+#   LFT_CHANNEL_ID=123456789012345678
+#   LFP_CHANNEL_ID=234567890123456789
+#   MOD_QUEUE_CHANNEL_ID=0
+#   COOLDOWN_MINUTES=10
+#   POST_EXPIRY_DAYS=7
+
 import asyncio
 import os
 import re
@@ -112,10 +125,17 @@ def build_title_and_fields(kind: str, data: dict):
     return title, fields, color
 
 async def post_embed(kind: str, author_id: int, data: dict) -> discord.Message:
+    """Create the final public post with the submitter's avatar and name."""
     channel_id = LFT_CHANNEL_ID if kind == "lft" else LFP_CHANNEL_ID
     channel = bot.get_channel(channel_id)
     if not channel:
         raise RuntimeError("Target channel not configured. Use /setup or set env IDs.")
+
+    # Fetch the author to grab avatar & display name
+    try:
+        author = bot.get_user(author_id) or await bot.fetch_user(author_id)
+    except Exception:
+        author = None
 
     title, fields, color = build_title_and_fields(kind, data)
     long_key = "Details" if kind == "lft" else "Benefits/Details"
@@ -127,6 +147,10 @@ async def post_embed(kind: str, author_id: int, data: dict) -> discord.Message:
         color=color,
         timestamp=datetime.utcnow(),
     )
+    # Put the user's avatar & name at the top for quick visual identification
+    if author:
+        embed.set_author(name=str(author), icon_url=author.display_avatar.url)
+
     for k, v in fields.items():
         if k == long_key:
             continue
@@ -151,7 +175,7 @@ async def post_embed(kind: str, author_id: int, data: dict) -> discord.Message:
 async def update_presence():
     activity = discord.Activity(
         type=discord.ActivityType.watching,
-        name="players and teams connect!"
+        name="Helping players and teams connect!"
     )
     await bot.change_presence(status=discord.Status.online, activity=activity)
 
@@ -207,6 +231,8 @@ class LFTModal(Modal, title="LFT Form"):
                     return
                 title, fields, _ = build_title_and_fields("lft", data)
                 embed = discord.Embed(title="[Queue] " + title, color=discord.Color.orange())
+                # Show submitter avatar & name in the queue preview too
+                embed.set_author(name=str(interaction.user), icon_url=interaction.user.display_avatar.url)
                 for k, v in fields.items():
                     if k == "Details":
                         continue
@@ -283,6 +309,8 @@ class LFPModal(Modal, title="LFP Form"):
                     return
                 title, fields, _ = build_title_and_fields("lfp", data)
                 embed = discord.Embed(title="[Queue] " + title, color=discord.Color.orange())
+                # Show submitter avatar & name in the queue preview
+                embed.set_author(name=str(interaction.user), icon_url=interaction.user.display_avatar.url)
                 for k, v in fields.items():
                     if k == "Benefits/Details":
                         continue
@@ -373,7 +401,7 @@ class ApprovalView(View):
         try:
             await maybe_delete_previous(self.author_id)
             msg = await post_embed(self.kind, self.author_id, self.payload)
-            mark_post(self.author_id, msg.id)
+            mark_post(self.author_id, msg.id)  # cooldown starts on approve
 
             # DM user with approval and link
             try:
@@ -382,7 +410,7 @@ class ApprovalView(View):
             except Exception:
                 pass
 
-            # Ping user in queue channel & disable buttons
+            # Ping user in the queue channel & disable buttons
             try:
                 ch = bot.get_channel(self.queue_channel_id)
                 if ch:
