@@ -175,7 +175,7 @@ async def post_embed(kind: str, author_id: int, data: dict) -> discord.Message:
 async def update_presence():
     activity = discord.Activity(
         type=discord.ActivityType.watching,
-        name="Helping players and teams connect!"
+        name="players and teams connect!"
     )
     await bot.change_presence(status=discord.Status.online, activity=activity)
 
